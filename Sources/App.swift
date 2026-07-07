@@ -4,7 +4,6 @@ import UIKit
 @main
 struct AltareApp: App {
     @StateObject private var session = Session()
-    @StateObject private var settings = AppSettings()
 
     init() { AltareApp.configureAppearance() }
 
@@ -18,32 +17,29 @@ struct AltareApp: App {
                 }
             }
             .environmentObject(session)
-            .environmentObject(settings)
-            .preferredColorScheme(settings.themeMode.colorScheme)
-            .tint(Theme.accent)
-            .environment(\.locale, Locale(identifier: settings.language.resolved))
+            .preferredColorScheme(.dark)
+            .tint(.white)
         }
     }
 
     static func configureAppearance() {
         let nav = UINavigationBarAppearance()
         nav.configureWithOpaqueBackground()
-        nav.backgroundColor = Theme.uiBackground
+        nav.backgroundColor = UIColor(Theme.background)
         nav.shadowColor = .clear
-        nav.titleTextAttributes = [.foregroundColor: UIColor.label]
-        nav.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+        nav.titleTextAttributes = [.foregroundColor: UIColor.white]
+        nav.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
         UINavigationBar.appearance().standardAppearance = nav
         UINavigationBar.appearance().scrollEdgeAppearance = nav
         UINavigationBar.appearance().compactAppearance = nav
-        UINavigationBar.appearance().tintColor = Theme.uiAccent
+        UINavigationBar.appearance().tintColor = .white
 
         let tab = UITabBarAppearance()
         tab.configureWithOpaqueBackground()
-        tab.backgroundColor = Theme.uiBackground
+        tab.backgroundColor = UIColor(Theme.background)
         UITabBar.appearance().standardAppearance = tab
         if #available(iOS 15.0, *) {
             UITabBar.appearance().scrollEdgeAppearance = tab
         }
-        UITabBar.appearance().tintColor = Theme.uiAccent
     }
 }

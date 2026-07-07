@@ -2,7 +2,6 @@ import SwiftUI
 
 struct LoginView: View {
     @EnvironmentObject var session: Session
-    @EnvironmentObject var settings: AppSettings
     @State private var identifier = ""
     @State private var password = ""
     @State private var errorMessage: String?
@@ -10,7 +9,7 @@ struct LoginView: View {
 
     var body: some View {
         ZStack {
-            Theme.background.ignoresSafeArea()
+            Color.black.ignoresSafeArea()
             VStack(spacing: 14) {
                 Spacer()
 
@@ -19,17 +18,17 @@ struct LoginView: View {
                     .renderingMode(.template)
                     .scaledToFit()
                     .frame(width: 60, height: 60)
-                    .foregroundColor(Theme.accent)
+                    .foregroundColor(.white)
 
                 Text("Altare")
                     .font(.system(size: 34, weight: .bold))
-                    .foregroundColor(Theme.textPrimary)
-                Text(settings.t("signInSubtitle"))
+                    .foregroundColor(.white)
+                Text("Sign in to continue")
                     .foregroundColor(Theme.textSecondary)
                     .padding(.bottom, 14)
 
-                field(icon: "person", placeholder: settings.t("emailOrUsername"), text: $identifier, secure: false)
-                field(icon: "lock.fill", placeholder: settings.t("password"), text: $password, secure: true)
+                field(icon: "person", placeholder: "Email or username", text: $identifier, secure: false)
+                field(icon: "lock.fill", placeholder: "Password", text: $password, secure: true)
 
                 if let errorMessage {
                     Text(errorMessage)
@@ -39,7 +38,7 @@ struct LoginView: View {
                 }
 
                 PrimaryButton(
-                    title: loading ? settings.t("signingIn") : settings.t("signIn"),
+                    title: loading ? "Signing in\u{2026}" : "Sign in",
                     enabled: !loading && !identifier.isEmpty && !password.isEmpty
                 ) {
                     Task { await signIn() }
@@ -68,7 +67,7 @@ struct LoginView: View {
                         .keyboardType(.emailAddress)
                 }
             }
-            .foregroundColor(Theme.textPrimary)
+            .foregroundColor(.white)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 16)

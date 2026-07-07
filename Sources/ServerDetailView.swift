@@ -2,17 +2,13 @@ import SwiftUI
 
 struct ServerDetailView: View {
     @EnvironmentObject var session: Session
-    @EnvironmentObject var settings: AppSettings
     let serverId: String
 
     @State private var server: Server?
     @State private var selectedTab = 0
     @State private var command = ""
     @State private var consoleLines: [String] = []
-
-    private var tabs: [String] {
-        [settings.t("console"), settings.t("files"), settings.t("backups"), settings.t("startup")]
-    }
+    private let tabs = ["Console", "Files", "Backups", "Startup"]
 
     var body: some View {
         ZStack {
@@ -27,7 +23,7 @@ struct ServerDetailView: View {
                 .padding(16)
             }
         }
-        .navigationTitle(server?.name ?? settings.t("server"))
+        .navigationTitle(server?.name ?? "Server")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Theme.background, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
@@ -43,10 +39,10 @@ struct ServerDetailView: View {
 
     private var powerButtons: some View {
         HStack(spacing: 10) {
-            powerButton(settings.t("start"), "play.fill", Theme.green) { await power("start") }
-            powerButton(settings.t("restart"), "arrow.clockwise", nil) { await power("restart") }
-            powerButton(settings.t("stop"), "stop.fill", nil) { await power("stop") }
-            powerButton(settings.t("kill"), "exclamationmark.triangle.fill", Theme.red) { await power("kill") }
+            powerButton("Start", "play.fill", Theme.green) { await power("start") }
+            powerButton("Restart", "arrow.clockwise", nil) { await power("restart") }
+            powerButton("Stop", "stop.fill", nil) { await power("stop") }
+            powerButton("Kill", "exclamationmark.triangle.fill", Theme.red) { await power("kill") }
         }
     }
 
@@ -60,8 +56,9 @@ struct ServerDetailView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .foregroundColor(.white)
-            .glass(cornerRadius: 14, tint: tint ?? Theme.accent)
+            .foregroundColor(tint ?? .white)
+            .background(Theme.card)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(ScaleButtonStyle())
     }
@@ -70,9 +67,9 @@ struct ServerDetailView: View {
 
     private var statsRow: some View {
         HStack(spacing: 10) {
-            StatBox(value: "0.0%", label: settings.t("cpu"))
-            StatBox(value: Format.gb(server?.limits?.memory), label: settings.t("memory"))
-            StatBox(value: "—", label: settings.t("uptime"))
+            StatBox(value: "0.0%", label: "CPU")
+            StatBox(value: Format.gb(server?.limits?.memory), label: "Memory")
+            StatBox(value: "\u{2014}", label: "Uptime")
         }
     }
 
@@ -87,9 +84,9 @@ struct ServerDetailView: View {
                     VStack(spacing: 6) {
                         Text(title)
                             .font(.subheadline.weight(selectedTab == index ? .semibold : .regular))
-                            .foregroundColor(selectedTab == index ? Theme.textPrimary : Theme.textSecondary)
+                            .foregroundColor(selectedTab == index ? .white : Theme.textSecondary)
                         Rectangle()
-                            .fill(selectedTab == index ? Theme.accent : Color.clear)
+                            .fill(selectedTab == index ? Color.white : Color.clear)
                             .frame(height: 2)
                     }
                 }
@@ -102,7 +99,7 @@ struct ServerDetailView: View {
         switch selectedTab {
         case 0: consoleView
         default:
-            Text(String(format: settings.t("webManagedFmt"), tabs[selectedTab]))
+            Text("\(tabs[selectedTab]) are managed on the web dashboard.")
                 .font(.footnote)
                 .foregroundColor(Theme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -115,10 +112,10 @@ struct ServerDetailView: View {
             HStack {
                 HStack(spacing: 6) {
                     Circle().fill(Theme.green).frame(width: 7, height: 7)
-                    Text(settings.t("live")).font(.caption).foregroundColor(Theme.textSecondary)
+                    Text("Live").font(.caption).foregroundColor(Theme.textSecondary)
                 }
                 Spacer()
-                Button(settings.t("clear")) { consoleLines.removeAll() }
+                Button("Clear") { consoleLines.removeAll() }
                     .font(.caption)
                     .foregroundColor(Theme.textSecondary)
             }
@@ -127,7 +124,7 @@ struct ServerDetailView: View {
                     ForEach(Array(consoleLines.enumerated()), id: \.offset) { _, line in
                         Text(line)
                             .font(.system(size: 11, design: .monospaced))
-                            .foregroundColor(Theme.textPrimary.opacity(0.85))
+                            .foregroundColor(.white.opacity(0.85))
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
@@ -138,14 +135,14 @@ struct ServerDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
             HStack {
-                TextField(settings.t("enterCommand"), text: $command)
-                    .foregroundColor(Theme.textPrimary)
+                TextField("Enter a command", text: $command)
+                    .foregroundColor(.white)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                 Button {
                     Task { await sendCommand() }
                 } label: {
-                    Image(systemName: "paperplane.fill").foregroundColor(Theme.accent)
+                    Image(systemName: "paperplane.fill").foregroundColor(.white)
                 }
             }
             .padding(.horizontal, 16)

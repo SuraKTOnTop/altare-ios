@@ -77,12 +77,12 @@ final class APIClient {
     }
 
     func get<T: Decodable>(_ path: String) async throws -> T {
-        try decodeUnwrapping(try await raw(path))
+        try decode(try await raw(path))
     }
 
     @discardableResult
     func post<T: Decodable>(_ path: String, body: Encodable? = nil) async throws -> T {
-        try decodeUnwrapping(try await raw(path, method: "POST", body: body))
+        try decode(try await raw(path, method: "POST", body: body))
     }
 
     func postVoid(_ path: String, body: Encodable? = nil) async throws {
@@ -93,52 +93,16 @@ final class APIClient {
         _ = try await raw(path, method: "PATCH", body: body)
     }
 
-    /// Decodes an object, transparently unwrapping a single well-known envelope
-    /// key (data / user / attributes / ...) when the top level is wrapped.
-    private func decodeUnwrapping<T: Decodable>(_ data: Data) throws -> T {
-        if let direct = try? decoder.decode(T.self, from: data) { return direct }
-        if let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            let keys = ["data", "user", "result", "tenant", "wallet", "rewards",
-                        "resources", "account", "profile", "me", "attributes", "payload"]
-            for key in keys {
-                guard let inner = obj[key] else { continue }
-                if let innerData = try? JSONSerialization.data(withJSONObject: inner, options: [.fragmentsAllowed]),
-                   let decoded = try? decoder.decode(T.self, from: innerData) {
-                    return decoded
-                }
-                if let innerObj = inner as? [String: Any],
-                   let attrs = innerObj["attributes"],
-                   let attrData = try? JSONSerialization.data(withJSONObject: attrs, options: [.fragmentsAllowed]),
-                   let decoded = try? decoder.decode(T.self, from: attrData) {
-                    return decoded
-                }
-            }
-        }
-        do { return try decoder.decode(T.self, from: data) }
-        catch { throw APIError.decoding(String(describing: error)) }
-    }
-
-    /// Decodes list endpoints that may be bare arrays, paginated wrappers, or
-    /// Pterodactyl-style { data: [ { attributes: {...} } ] } payloads.
+    /// Decodes list endpoints that may or may not be wrapped in a pagination object.
     func getArray<T: Decodable>(_ path: String) async throws -> [T] {
         let data = try await raw(path)
         if let array = try? decoder.decode([T].self, from: data) { return array }
         if let paged = try? decoder.decode(Paged<T>.self, from: data) { return paged.values }
-        if let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            let keys = ["data", "items", "results", "servers", "tenants", "values", "list", "nodes"]
-            for key in keys {
-                guard let innerArray = obj[key] as? [Any] else { continue }
-                if let innerData = try? JSONSerialization.data(withJSONObject: innerArray),
-                   let decoded = try? decoder.decode([T].self, from: innerData) {
-                    return decoded
-                }
-                let mapped = innerArray.map { ($0 as? [String: Any])?["attributes"] ?? $0 }
-                if let mappedData = try? JSONSerialization.data(withJSONObject: mapped),
-                   let decoded = try? decoder.decode([T].self, from: mappedData) {
-                    return decoded
-                }
-            }
-        }
         return []
+    }
+
+    private func decode<T: Decodable>(_ data: Data) throws -> T {
+        do { return try decoder.decode(T.self, from: data) }
+        catch { throw APIError.decoding(String(describing: error)) }
     }
 }

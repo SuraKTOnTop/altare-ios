@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ServersView: View {
     @EnvironmentObject var session: Session
-    @EnvironmentObject var settings: AppSettings
     @State private var servers: [Server] = []
     @State private var loading = false
     @State private var loadedTenant: String?
@@ -21,7 +20,7 @@ struct ServersView: View {
                             .buttonStyle(.plain)
                         }
                         if servers.isEmpty {
-                            Text(loading ? settings.t("loading") : settings.t("noServers"))
+                            Text(loading ? "Loading\u{2026}" : "No servers yet")
                                 .foregroundColor(Theme.textSecondary)
                                 .padding(.top, 80)
                         }
@@ -35,9 +34,10 @@ struct ServersView: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(.title2.weight(.semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.black)
                         .frame(width: 60, height: 60)
-                        .glass(cornerRadius: 30, tint: Theme.accent)
+                        .background(Color.white)
+                        .clipShape(Circle())
                 }
                 .buttonStyle(ScaleButtonStyle())
                 .padding(22)
@@ -51,6 +51,7 @@ struct ServersView: View {
             .toolbarBackground(Theme.background, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .task(id: session.currentTenant?.id) {
+                // Only refetch when the tenant actually changed, not on every tab switch.
                 if session.currentTenant?.id != loadedTenant { await load() }
             }
         }
@@ -72,7 +73,7 @@ struct ServerCard: View {
             HStack {
                 Text(server.name ?? server.id)
                     .font(.headline)
-                    .foregroundColor(Theme.textPrimary)
+                    .foregroundColor(.white)
                 Spacer()
                 StatusBadge(status: server.displayStatus)
             }

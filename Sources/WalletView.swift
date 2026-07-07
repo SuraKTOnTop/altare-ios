@@ -2,7 +2,6 @@ import SwiftUI
 
 struct WalletView: View {
     @EnvironmentObject var session: Session
-    @EnvironmentObject var settings: AppSettings
     @State private var wallet: WalletInfo?
     @State private var loadedTenant: String?
     @State private var memory = 0.0
@@ -43,15 +42,15 @@ struct WalletView: View {
 
     private var balanceCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label(settings.t("balance"), systemImage: "creditcard")
+            Label("Balance", systemImage: "creditcard")
                 .font(.subheadline)
                 .foregroundColor(Theme.textSecondary)
-            Text("\(Format.credits(wallet?.amount ?? 0)) \(settings.t("credits"))")
+            Text("\(Format.credits(wallet?.amount ?? 0)) credits")
                 .font(.system(size: 30, weight: .bold))
-                .foregroundColor(Theme.textPrimary)
+                .foregroundColor(.white)
             HStack(spacing: 12) {
-                PrimaryButton(title: settings.t("addCredits"), systemImage: "plus") {}
-                SecondaryButton(title: settings.t("transfer"), systemImage: "arrow.left.arrow.right") {}
+                PrimaryButton(title: "Add credits", systemImage: "plus") {}
+                SecondaryButton(title: "Transfer", systemImage: "arrow.left.arrow.right") {}
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -60,18 +59,18 @@ struct WalletView: View {
 
     private var buyResourcesCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(settings.t("buyResources")).font(.subheadline).foregroundColor(Theme.textSecondary)
-            resourceRow("memorychip", settings.t("memory"), "\(Format.credits(priceMemory)) cr / MB", $memory, step: 512, unit: "MB")
-            resourceRow("externaldrive", settings.t("disk"), "\(Format.credits(priceDisk)) cr / MB", $disk, step: 1024, unit: "MB")
-            resourceRow("bolt.fill", settings.t("cpu"), "\(Format.credits(priceCpu)) cr / %", $cpu, step: 25, unit: "%")
-            resourceRow("square.stack.3d.up", settings.t("serverSlots"), "\(Format.credits(priceSlot)) cr", $slots, step: 1, unit: "")
-            Divider().overlay(Color.primary.opacity(0.1))
+            Text("Buy resources").font(.subheadline).foregroundColor(Theme.textSecondary)
+            resourceRow("memorychip", "Memory", "\(Format.credits(priceMemory)) cr / MB", $memory, step: 512, unit: "MB")
+            resourceRow("externaldrive", "Disk", "\(Format.credits(priceDisk)) cr / MB", $disk, step: 1024, unit: "MB")
+            resourceRow("bolt.fill", "CPU", "\(Format.credits(priceCpu)) cr / %", $cpu, step: 25, unit: "%")
+            resourceRow("square.stack.3d.up", "Server slots", "\(Format.credits(priceSlot)) cr each", $slots, step: 1, unit: "")
+            Divider().overlay(Color.white.opacity(0.1))
             HStack {
-                Text(settings.t("estimatedCost")).foregroundColor(Theme.textSecondary)
+                Text("Estimated cost").foregroundColor(Theme.textSecondary)
                 Spacer()
-                Text("\(Format.credits(estimated)) \(settings.t("credits"))").foregroundColor(Theme.textPrimary).fontWeight(.semibold)
+                Text("\(Format.credits(estimated)) credits").foregroundColor(.white).fontWeight(.semibold)
             }
-            PrimaryButton(title: settings.t("purchase"), enabled: estimated > 0) {
+            PrimaryButton(title: "Purchase", enabled: estimated > 0) {
                 Task { await purchase() }
             }
         }
@@ -83,7 +82,7 @@ struct WalletView: View {
         HStack {
             Image(systemName: icon).foregroundColor(Theme.textSecondary).frame(width: 24)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).foregroundColor(Theme.textPrimary)
+                Text(title).foregroundColor(.white)
                 Text(subtitle).font(.caption).foregroundColor(Theme.textSecondary)
             }
             Spacer()
@@ -91,13 +90,13 @@ struct WalletView: View {
                 Image(systemName: "minus").frame(width: 28, height: 28)
             }
             Text("\(Int(value.wrappedValue)) \(unit)")
-                .foregroundColor(Theme.textPrimary)
+                .foregroundColor(.white)
                 .frame(minWidth: 66)
             Button { value.wrappedValue += step } label: {
                 Image(systemName: "plus").frame(width: 28, height: 28)
             }
         }
-        .foregroundColor(Theme.accent)
+        .foregroundColor(.white)
     }
 
     private func load() async {
