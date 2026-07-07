@@ -1,0 +1,55 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select newest installed Xcode
+        run: |
+          set -eo pipefail
+          latest=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
+          echo "Using $latest"
+          sudo xcode-select -s "$latest/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build unsigned archive
+        run: |
+          set -eo pipefail
+          xcodebuild \
+            -project Altare.xcodeproj \
+            -scheme Altare \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$PWD/build/Altare.xcarchive" \
+            clean archive \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+
+      - name: Create unsigned IPA
+        run: |
+          cd build
+          mkdir -p Payload
+          cp -R Altare.xcarchive/Products/Applications/Altare.app Payload/
+          zip -qr Altare-unsigned.ipa Payload
+          ls -lh Altare-unsigned.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Altare-unsigned-ipa
+          path: build/Altare-unsigned.ipa
+          if-no-files-found: error
