@@ -34,11 +34,19 @@ final class Session: ObservableObject {
     }
 
     func loadProfileAndTenants() async {
-        // Fetch profile and tenants in parallel instead of one after another.
+        // Fetch account, profile and tenants in parallel, then merge the two
+        // profile sources so we fill in whatever each endpoint provides.
+        async let accountResult: UserProfile? = try? await api.get("api/auth/account")
         async let meResult: UserProfile? = try? await api.get("api/user/me")
         async let tenantsResult: [Tenant] = (try? await api.getArray("api/tenants")) ?? []
-        let (loadedMe, loaded) = await (meResult, tenantsResult)
-        me = loadedMe
+        let (account, meProfile, loaded) = await (accountResult, meResult, tenantsResult)
+
+        if let account {
+            me = account.merged(with: meProfile)
+        } else {
+            me = meProfile
+        }
+
         tenants = loaded
         if currentTenant == nil || !loaded.contains(where: { $0.id == currentTenant?.id }) {
             currentTenant = loaded.first

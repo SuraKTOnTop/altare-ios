@@ -1,57 +1,82 @@
 import SwiftUI
+import UIKit
 
-enum Theme {
-    static let background = Color(hex: 0x0B0B0C)
-    static let card = Color(hex: 0x151518)
-    static let field = Color(hex: 0x1C1C20)
-    static let textPrimary = Color.white
-    static let textSecondary = Color.white.opacity(0.55)
-    static let green = Color(hex: 0x37C871)
-    static let red = Color(hex: 0xE23B3B)
-    static let orange = Color(hex: 0xE0952B)
-}
+// MARK: - Color helpers
 
 extension Color {
-    init(hex: UInt, alpha: Double = 1) {
+    init(hex: UInt) {
         self.init(
             .sRGB,
             red: Double((hex >> 16) & 0xFF) / 255,
             green: Double((hex >> 8) & 0xFF) / 255,
             blue: Double(hex & 0xFF) / 255,
-            opacity: alpha
+            opacity: 1
         )
+    }
+    /// A color that adapts between light and dark appearance.
+    static func dyn(light: UInt, dark: UInt) -> Color {
+        Color(UIColor.dyn(light: light, dark: dark))
+    }
+}
+
+extension UIColor {
+    convenience init(hex: UInt) {
+        self.init(
+            red: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255,
+            alpha: 1
+        )
+    }
+    static func dyn(light: UInt, dark: UInt) -> UIColor {
+        UIColor { trait in
+            trait.userInterfaceStyle == .dark ? UIColor(hex: dark) : UIColor(hex: light)
+        }
+    }
+}
+
+// MARK: - Theme palette
+
+enum Theme {
+    static let accent = Color(hex: 0x2F6BFF)
+    static let uiAccent = UIColor(hex: 0x2F6BFF)
+
+    static let background = Color.dyn(light: 0xF2F3F7, dark: 0x0B0D12)
+    static let uiBackground = UIColor.dyn(light: 0xF2F3F7, dark: 0x0B0D12)
+
+    static let card = Color.dyn(light: 0xFFFFFF, dark: 0x161A22)
+    static let field = Color.dyn(light: 0xFFFFFF, dark: 0x1E2430)
+
+    static let textPrimary = Color.primary
+    static let textSecondary = Color.secondary
+
+    static let red = Color(hex: 0xFF4D4F)
+    static let green = Color(hex: 0x34C759)
+}
+
+// MARK: - Card
+
+struct CardStyle: ViewModifier {
+    var padding: CGFloat = 16
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(Theme.card)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+            )
     }
 }
 
 extension View {
-    func cardStyle(padding: CGFloat = 16, radius: CGFloat = 16) -> some View {
-        self
-            .padding(padding)
-            .background(Theme.card)
-            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+    func cardStyle(padding: CGFloat = 16) -> some View {
+        modifier(CardStyle(padding: padding))
     }
 }
 
-enum Format {
-    /// Values from the API are assumed to be in MB; convert to GB for display.
-    static func gb(_ value: Double?) -> String {
-        guard let value else { return "\u{2014}" }
-        let gb = value >= 1024 ? value / 1024 : value
-        return String(format: "%.1f GB", gb)
-    }
-
-    static func percent(_ value: Double?) -> String {
-        guard let value else { return "\u{2014}" }
-        return String(format: "%.0f%%", value)
-    }
-
-    static func credits(_ value: Double) -> String {
-        if value == value.rounded() { return String(format: "%.0f", value) }
-        return String(format: "%.2f", value)
-    }
-}
-
-// MARK: - Shared components
+// MARK: - Buttons
 
 struct PrimaryButton: View {
     let title: String
@@ -66,13 +91,13 @@ struct PrimaryButton: View {
                 Text(title).fontWeight(.semibold)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, 15)
             .foregroundColor(.white)
-            .liquidGlass(tint: .white, strong: true)
+            .glass(cornerRadius: 14, tint: Theme.accent, prominent: true)
         }
         .buttonStyle(ScaleButtonStyle())
+        .opacity(enabled ? 1 : 0.5)
         .disabled(!enabled)
-        .opacity(enabled ? 1 : 0.45)
     }
 }
 
@@ -85,29 +110,31 @@ struct SecondaryButton: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 if let systemImage { Image(systemName: systemImage) }
-                Text(title).fontWeight(.medium)
+                Text(title).fontWeight(.semibold)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 15)
-            .foregroundColor(.white)
-            .liquidGlass()
+            .foregroundColor(Theme.accent)
+            .glass(cornerRadius: 14, prominent: false)
         }
         .buttonStyle(ScaleButtonStyle())
     }
 }
 
+// MARK: - Small components
+
 struct StatBox: View {
     let value: String
     let label: String
     var body: some View {
-        VStack(spacing: 6) {
-            Text(value).font(.system(size: 20, weight: .bold)).foregroundColor(.white)
+        VStack(spacing: 4) {
+            Text(value).font(.headline).foregroundColor(Theme.textPrimary)
             Text(label).font(.caption).foregroundColor(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .background(Theme.card)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(.vertical, 14)
+        .background(Theme.field)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -116,8 +143,8 @@ struct StatusBadge: View {
     private var color: Color {
         switch status.lowercased() {
         case "running", "online", "active": return Theme.green
-        case "starting", "stopping": return Theme.orange
-        case "offline", "stopped": return Theme.red
+        case "starting", "installing": return .orange
+        case "stopping", "offline", "stopped": return Theme.red
         default: return .gray
         }
     }
@@ -128,7 +155,7 @@ struct StatusBadge: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(Color.white.opacity(0.06))
+        .background(color.opacity(0.12))
         .clipShape(Capsule())
     }
 }
@@ -137,8 +164,8 @@ struct IconStat: View {
     let system: String
     let text: String
     var body: some View {
-        HStack(spacing: 5) {
-            Image(systemName: system).font(.caption2).foregroundColor(Theme.textSecondary)
+        HStack(spacing: 6) {
+            Image(systemName: system).font(.caption).foregroundColor(Theme.textSecondary)
             Text(text).font(.caption).foregroundColor(Theme.textSecondary)
         }
     }
@@ -149,15 +176,43 @@ struct TenantMenu: View {
     var body: some View {
         Menu {
             ForEach(session.tenants) { tenant in
-                Button(tenant.name ?? tenant.id) { session.currentTenant = tenant }
+                Button {
+                    session.currentTenant = tenant
+                } label: {
+                    if session.currentTenant?.id == tenant.id {
+                        Label(tenant.name ?? tenant.id, systemImage: "checkmark")
+                    } else {
+                        Text(tenant.name ?? tenant.id)
+                    }
+                }
             }
         } label: {
-            HStack(spacing: 4) {
-                Text(session.currentTenant?.name ?? "\u{2014}")
-                    .font(.title3.weight(.semibold))
-                Image(systemName: "chevron.down").font(.caption2)
+            HStack(spacing: 5) {
+                Text(session.currentTenant?.name ?? "Altare")
+                    .font(.headline)
+                    .foregroundColor(Theme.textPrimary)
+                Image(systemName: "chevron.down")
+                    .font(.caption2)
+                    .foregroundColor(Theme.textSecondary)
             }
-            .foregroundColor(.white)
         }
+    }
+}
+
+// MARK: - Formatting helpers
+
+enum Format {
+    static func credits(_ value: Double) -> String {
+        if value == value.rounded() { return String(Int(value)) }
+        return String(format: "%.2f", value)
+    }
+    static func gb(_ mb: Double?) -> String {
+        guard let mb else { return "—" }
+        if mb >= 1024 { return String(format: "%.1f GB", mb / 1024) }
+        return "\(Int(mb)) MB"
+    }
+    static func percent(_ value: Double?) -> String {
+        guard let value else { return "—" }
+        return "\(Int(value))%"
     }
 }

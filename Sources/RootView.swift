@@ -2,19 +2,20 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject var session: Session
+    @EnvironmentObject var settings: AppSettings
 
     var body: some View {
         TabView {
             ServersView()
-                .tabItem { Label("Servers", systemImage: "square.stack.3d.up.fill") }
+                .tabItem { Label(settings.t("tabServers"), systemImage: "square.stack.3d.up.fill") }
             WalletView()
-                .tabItem { Label("Wallet", systemImage: "creditcard.fill") }
+                .tabItem { Label(settings.t("tabWallet"), systemImage: "creditcard.fill") }
             RewardsView()
-                .tabItem { Label("Rewards", systemImage: "gift.fill") }
+                .tabItem { Label(settings.t("tabRewards"), systemImage: "gift.fill") }
             AccountView()
-                .tabItem { Label("Account", systemImage: "person.fill") }
+                .tabItem { Label(settings.t("tabAccount"), systemImage: "person.fill") }
         }
-        .tint(.white)
+        .tint(Theme.accent)
         .task { await session.bootstrap() }
     }
 }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RewardsView: View {
     @EnvironmentObject var session: Session
+    @EnvironmentObject var settings: AppSettings
     @State private var rewards: RewardsInfo?
     @State private var earning = false
     @State private var loadedTenant: String?
@@ -30,13 +31,13 @@ struct RewardsView: View {
 
     private var dailyCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Daily reward").font(.subheadline).foregroundColor(Theme.textSecondary)
+            Text(settings.t("dailyReward")).font(.subheadline).foregroundColor(Theme.textSecondary)
             HStack(spacing: 10) {
-                StatBox(value: Format.credits(rewards?.daily?.reward ?? 0), label: "Reward")
-                StatBox(value: "\(rewards?.daily?.streak ?? 0)", label: "Streak")
-                StatBox(value: "\(rewards?.daily?.nextStreak ?? 0)", label: "Next streak")
+                StatBox(value: Format.credits(rewards?.daily?.reward ?? 0), label: settings.t("reward"))
+                StatBox(value: "\(rewards?.daily?.streak ?? 0)", label: settings.t("streak"))
+                StatBox(value: "\(rewards?.daily?.nextStreak ?? 0)", label: settings.t("nextStreak"))
             }
-            PrimaryButton(title: "Claim", systemImage: "gift") {
+            PrimaryButton(title: settings.t("claim"), systemImage: "gift") {
                 Task { await claim() }
             }
         }
@@ -46,17 +47,17 @@ struct RewardsView: View {
 
     private var afkCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("AFK rewards").font(.subheadline).foregroundColor(Theme.textSecondary)
+            Text(settings.t("afkRewards")).font(.subheadline).foregroundColor(Theme.textSecondary)
             HStack(spacing: 6) {
                 Circle().fill(earning ? Theme.green : Color.gray).frame(width: 7, height: 7)
-                Text(earning ? "Earning" : "Not earning").font(.caption).foregroundColor(Theme.textSecondary)
+                Text(earning ? settings.t("earning") : settings.t("notEarning")).font(.caption).foregroundColor(Theme.textSecondary)
             }
             HStack(spacing: 10) {
-                StatBox(value: Format.credits(rewards?.afk?.now ?? 0), label: "AFK now")
-                StatBox(value: String(format: "%.2f", rewards?.afk?.perMinute ?? 0), label: "Per minute")
-                StatBox(value: String(format: "%.1fx", rewards?.afk?.party ?? 1), label: "Party x")
+                StatBox(value: Format.credits(rewards?.afk?.now ?? 0), label: settings.t("afkNow"))
+                StatBox(value: String(format: "%.2f", rewards?.afk?.perMinute ?? 0), label: settings.t("perMinute"))
+                StatBox(value: String(format: "%.1fx", rewards?.afk?.party ?? 1), label: settings.t("partyX"))
             }
-            PrimaryButton(title: earning ? "Stop earning" : "Start earning", systemImage: "bolt.fill") {
+            PrimaryButton(title: earning ? settings.t("stopEarning") : settings.t("startEarning"), systemImage: "bolt.fill") {
                 Task { await toggleAfk() }
             }
         }
@@ -66,19 +67,19 @@ struct RewardsView: View {
 
     private var referralCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Referrals").font(.subheadline).foregroundColor(Theme.textSecondary)
+            Text(settings.t("referrals")).font(.subheadline).foregroundColor(Theme.textSecondary)
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Your code").font(.caption).foregroundColor(Theme.textSecondary)
-                    Text(rewards?.referral?.code ?? "\u{2014}")
+                    Text(settings.t("yourCode")).font(.caption).foregroundColor(Theme.textSecondary)
+                    Text(rewards?.referral?.code ?? "—")
                         .font(.title3.weight(.semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.textPrimary)
                 }
                 Spacer()
                 Button {
                     UIPasteboard.general.string = rewards?.referral?.code
                 } label: {
-                    Image(systemName: "doc.on.doc").foregroundColor(.white)
+                    Image(systemName: "doc.on.doc").foregroundColor(Theme.accent)
                 }
             }
         }

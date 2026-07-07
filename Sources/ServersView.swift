@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ServersView: View {
     @EnvironmentObject var session: Session
+    @EnvironmentObject var settings: AppSettings
     @State private var servers: [Server] = []
     @State private var loading = false
     @State private var loadedTenant: String?
@@ -20,7 +21,7 @@ struct ServersView: View {
                             .buttonStyle(.plain)
                         }
                         if servers.isEmpty {
-                            Text(loading ? "Loading\u{2026}" : "No servers yet")
+                            Text(loading ? settings.t("loading") : settings.t("noServers"))
                                 .foregroundColor(Theme.textSecondary)
                                 .padding(.top, 80)
                         }
@@ -36,7 +37,7 @@ struct ServersView: View {
                         .font(.title2.weight(.semibold))
                         .foregroundColor(.white)
                         .frame(width: 60, height: 60)
-                        .liquidGlass(cornerRadius: 30, tint: .white)
+                        .glass(cornerRadius: 30, tint: Theme.accent)
                 }
                 .buttonStyle(ScaleButtonStyle())
                 .padding(22)
@@ -50,7 +51,6 @@ struct ServersView: View {
             .toolbarBackground(Theme.background, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .task(id: session.currentTenant?.id) {
-                // Only refetch when the tenant actually changed, not on every tab switch.
                 if session.currentTenant?.id != loadedTenant { await load() }
             }
         }
@@ -72,7 +72,7 @@ struct ServerCard: View {
             HStack {
                 Text(server.name ?? server.id)
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(Theme.textPrimary)
                 Spacer()
                 StatusBadge(status: server.displayStatus)
             }
