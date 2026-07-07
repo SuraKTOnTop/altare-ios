@@ -4,6 +4,7 @@ struct RewardsView: View {
     @EnvironmentObject var session: Session
     @State private var rewards: RewardsInfo?
     @State private var earning = false
+    @State private var loadedTenant: String?
 
     var body: some View {
         NavigationStack {
@@ -21,7 +22,9 @@ struct RewardsView: View {
             .toolbar { ToolbarItem(placement: .topBarLeading) { TenantMenu() } }
             .toolbarBackground(Theme.background, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .task(id: session.currentTenant?.id) { await load() }
+            .task(id: session.currentTenant?.id) {
+                if session.currentTenant?.id != loadedTenant { await load() }
+            }
         }
     }
 
@@ -87,6 +90,7 @@ struct RewardsView: View {
         guard let tenant = session.currentTenant?.id else { return }
         rewards = try? await session.api.get("api/tenants/\(tenant)/rewards") as RewardsInfo
         earning = rewards?.afk?.earning ?? false
+        loadedTenant = tenant
     }
 
     private func claim() async {

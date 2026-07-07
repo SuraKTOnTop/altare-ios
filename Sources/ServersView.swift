@@ -4,6 +4,7 @@ struct ServersView: View {
     @EnvironmentObject var session: Session
     @State private var servers: [Server] = []
     @State private var loading = false
+    @State private var loadedTenant: String?
 
     var body: some View {
         NavigationStack {
@@ -33,12 +34,11 @@ struct ServersView: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(.title2.weight(.semibold))
-                        .foregroundColor(.black)
-                        .frame(width: 56, height: 56)
-                        .background(Color.white)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.4), radius: 8, y: 4)
+                        .foregroundColor(.white)
+                        .frame(width: 60, height: 60)
+                        .liquidGlass(cornerRadius: 30, tint: .white)
                 }
+                .buttonStyle(ScaleButtonStyle())
                 .padding(22)
             }
             .navigationDestination(for: String.self) { id in
@@ -49,7 +49,10 @@ struct ServersView: View {
             }
             .toolbarBackground(Theme.background, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .task(id: session.currentTenant?.id) { await load() }
+            .task(id: session.currentTenant?.id) {
+                // Only refetch when the tenant actually changed, not on every tab switch.
+                if session.currentTenant?.id != loadedTenant { await load() }
+            }
         }
     }
 
@@ -57,6 +60,7 @@ struct ServersView: View {
         guard let tenant = session.currentTenant?.id else { return }
         loading = true
         servers = (try? await session.api.getArray("api/tenants/\(tenant)/servers")) ?? []
+        loadedTenant = tenant
         loading = false
     }
 }

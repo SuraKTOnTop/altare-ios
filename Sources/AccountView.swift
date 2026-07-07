@@ -5,6 +5,7 @@ struct AccountView: View {
     @State private var username = ""
     @State private var email = ""
     @State private var resources: TenantResources?
+    @State private var loadedTenant: String?
 
     var body: some View {
         NavigationStack {
@@ -30,10 +31,10 @@ struct AccountView: View {
             .toolbar { ToolbarItem(placement: .topBarLeading) { TenantMenu() } }
             .toolbarBackground(Theme.background, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .task {
-                username = session.me?.username ?? ""
-                email = session.me?.email ?? ""
-                await loadResources()
+            .task(id: session.currentTenant?.id) {
+                if username.isEmpty { username = session.me?.username ?? "" }
+                if email.isEmpty { email = session.me?.email ?? "" }
+                if session.currentTenant?.id != loadedTenant { await loadResources() }
             }
         }
     }
@@ -112,6 +113,7 @@ struct AccountView: View {
     private func loadResources() async {
         guard let tenant = session.currentTenant?.id else { return }
         resources = try? await session.api.get("api/tenants/\(tenant)/resources") as TenantResources
+        loadedTenant = tenant
     }
 
     private func save() async {

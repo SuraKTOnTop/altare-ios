@@ -34,8 +34,11 @@ final class Session: ObservableObject {
     }
 
     func loadProfileAndTenants() async {
-        me = try? await api.get("api/user/me") as UserProfile
-        let loaded: [Tenant] = (try? await api.getArray("api/tenants")) ?? []
+        // Fetch profile and tenants in parallel instead of one after another.
+        async let meResult: UserProfile? = try? await api.get("api/user/me")
+        async let tenantsResult: [Tenant] = (try? await api.getArray("api/tenants")) ?? []
+        let (loadedMe, loaded) = await (meResult, tenantsResult)
+        me = loadedMe
         tenants = loaded
         if currentTenant == nil || !loaded.contains(where: { $0.id == currentTenant?.id }) {
             currentTenant = loaded.first

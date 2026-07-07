@@ -40,13 +40,13 @@ struct ServerDetailView: View {
     private var powerButtons: some View {
         HStack(spacing: 10) {
             powerButton("Start", "play.fill", Theme.green) { await power("start") }
-            powerButton("Restart", "arrow.clockwise", Color.white.opacity(0.12)) { await power("restart") }
-            powerButton("Stop", "stop.fill", Color.white.opacity(0.12)) { await power("stop") }
+            powerButton("Restart", "arrow.clockwise", nil) { await power("restart") }
+            powerButton("Stop", "stop.fill", nil) { await power("stop") }
             powerButton("Kill", "exclamationmark.triangle.fill", Theme.red) { await power("kill") }
         }
     }
 
-    private func powerButton(_ title: String, _ icon: String, _ color: Color, action: @escaping () async -> Void) -> some View {
+    private func powerButton(_ title: String, _ icon: String, _ tint: Color?, action: @escaping () async -> Void) -> some View {
         Button {
             Task { await action() }
         } label: {
@@ -56,10 +56,10 @@ struct ServerDetailView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .background(color)
             .foregroundColor(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .liquidGlass(cornerRadius: 14, tint: tint)
         }
+        .buttonStyle(ScaleButtonStyle())
     }
 
     // MARK: Stats

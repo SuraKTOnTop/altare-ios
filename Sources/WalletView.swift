@@ -3,6 +3,7 @@ import SwiftUI
 struct WalletView: View {
     @EnvironmentObject var session: Session
     @State private var wallet: WalletInfo?
+    @State private var loadedTenant: String?
     @State private var memory = 0.0
     @State private var disk = 0.0
     @State private var cpu = 0.0
@@ -33,7 +34,9 @@ struct WalletView: View {
             .toolbar { ToolbarItem(placement: .topBarLeading) { TenantMenu() } }
             .toolbarBackground(Theme.background, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .task(id: session.currentTenant?.id) { await load() }
+            .task(id: session.currentTenant?.id) {
+                if session.currentTenant?.id != loadedTenant { await load() }
+            }
         }
     }
 
@@ -98,13 +101,18 @@ struct WalletView: View {
 
     private func load() async {
         guard let tenant = session.currentTenant?.id else { return }
-        wallet = try? await session.api.get("api/tenants/\(tenant)/wallet") as WalletInfo
-        if let prices = try? await session.api.get("api/tenants/\(tenant)/store/prices") as StorePrices {
+        // Fetch balance and store prices in parallel.
+        async let walletResult: WalletInfo? = try? await session.api.get("api/tenants/\(tenant)/wallet")
+        async let pricesResult: StorePrices? = try? await session.api.get("api/tenants/\(tenant)/store/prices")
+        let (w, prices) = await (walletResult, pricesResult)
+        wallet = w
+        if let prices {
             priceMemory = prices.memory ?? priceMemory
             priceDisk = prices.disk ?? priceDisk
             priceCpu = prices.cpu ?? priceCpu
             priceSlot = prices.slots ?? priceSlot
         }
+        loadedTenant = tenant
     }
 
     private func purchase() async {
